@@ -1,0 +1,26 @@
+---
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Deploy home page
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Listen on IPv4 only (some Docker setups have no IPv6)
+  ansible.builtin.lineinfile:
+    path: /etc/nginx/sites-available/default
+    regexp: '^\s*listen \[::\]:80'
+    state: absent
+  notify: Restart nginx
+
+- name: Ensure nginx is running
+  ansible.builtin.service:
+    name: nginx
+    state: started

@@ -1,0 +1,12 @@
+# Same inventory in YAML format (for comparison / teaching)
+all:
+  children:
+    lab:
+      children:
+        webservers:
+          hosts:
+            web1:
+            web2:
+        dbservers:
+          hosts:
+            db1:

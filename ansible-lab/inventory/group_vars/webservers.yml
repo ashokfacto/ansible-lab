@@ -1,0 +1,5 @@
+# Applies only to hosts in [webservers]
+http_port: 80
+page_title: "Hello from Ansible"
+nginx_packages:
+  - nginx

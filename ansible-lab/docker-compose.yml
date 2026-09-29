@@ -1,0 +1,28 @@
+# Ansible beginner lab: 3 managed nodes + 1 optional control node
+# Start:  docker compose up -d --build
+# Stop:   docker compose down
+services:
+  web1:
+    build: ./node
+    hostname: web1
+    container_name: web1
+    ports: ["2221:22", "8081:80"]
+  web2:
+    build: ./node
+    hostname: web2
+    container_name: web2
+    ports: ["2222:22", "8082:80"]
+  db1:
+    build: ./node
+    hostname: db1
+    container_name: db1
+    ports: ["2223:22"]
+  control:
+    build: ./control
+    hostname: control
+    container_name: control
+    volumes: ["./:/ansible"]
+    environment:
+      ANSIBLE_CONFIG: /ansible/ansible.cfg
+      ANSIBLE_INVENTORY: /ansible/inventory/lab.ini
+    depends_on: [web1, web2, db1]

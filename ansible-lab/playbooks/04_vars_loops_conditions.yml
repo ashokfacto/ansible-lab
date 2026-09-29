@@ -1,0 +1,34 @@
+---
+# Exercise 4: variables, loops, conditionals and register
+- name: Variables, loops and conditionals
+  hosts: all
+  become: true
+  vars:
+    common_packages: [curl, tree, vim-tiny]
+
+  tasks:
+    - name: Install common packages (loop)
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: true
+      loop: "{{ common_packages }}"
+
+    - name: Only on Debian-family systems (conditional)
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} is {{ ansible_facts['os_family'] }} - apt is the right module"
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Capture command output (register)
+      ansible.builtin.command: uptime
+      register: uptime_result
+      changed_when: false           # reading data never 'changes' the server
+
+    - name: Show the registered value
+      ansible.builtin.debug:
+        var: uptime_result.stdout
+
+    - name: Only on the database host (host_vars in action)
+      ansible.builtin.debug:
+        msg: "I am the {{ server_role }} server"
+      when: server_role is defined

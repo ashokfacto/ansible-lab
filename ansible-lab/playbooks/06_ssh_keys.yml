@@ -1,0 +1,14 @@
+---
+# Exercise 6 (Authentication): switch from password to SSH key authentication
+# Step 1 (once, on the control node):  ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+# Step 2:  ansible-playbook playbooks/06_ssh_keys.yml -k     (password: ansible)
+# Step 3:  ansible all -m ping                               (no -k needed any more!)
+- name: Distribute the control node's public key
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Add public key to ~ansible/.ssh/authorized_keys
+      ansible.posix.authorized_key:
+        user: ansible
+        state: present
+        key: "{{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'HOME') + '/.ssh/id_ed25519.pub') }}"

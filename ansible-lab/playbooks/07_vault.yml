@@ -1,0 +1,18 @@
+---
+# Exercise 7: using secrets encrypted with Ansible Vault
+# Run: ansible-playbook playbooks/07_vault.yml --ask-vault-pass
+- name: Use an encrypted secret
+  hosts: dbservers
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  tasks:
+    - name: Write DB config containing the secret
+      ansible.builtin.copy:
+        dest: /etc/app-db.conf
+        content: |
+          db_user=app
+          db_password={{ db_password }}
+        owner: root
+        mode: "0600"
+      no_log: true                  # keep the secret out of the console output

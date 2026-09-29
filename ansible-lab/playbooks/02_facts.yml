@@ -1,0 +1,13 @@
+---
+# Exercise 2: facts = information Ansible discovers about each host
+- name: Show a few gathered facts
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Print OS, IP and memory
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} runs {{ ansible_facts['distribution'] }}
+          {{ ansible_facts['distribution_version'] }},
+          IP {{ ansible_facts['default_ipv4']['address'] | default('n/a') }},
+          RAM {{ ansible_facts['memtotal_mb'] }} MB

@@ -1,0 +1,9 @@
+---
+# Exercise 1: prove Ansible can reach every node
+# First run (password auth):  ansible-playbook playbooks/01_ping.yml -k     (password: ansible)
+- name: Connectivity check
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping every managed node
+      ansible.builtin.ping:

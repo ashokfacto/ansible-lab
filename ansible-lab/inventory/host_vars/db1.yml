@@ -1,0 +1,2 @@
+# Applies only to db1 (host_vars beat group_vars)
+server_role: database

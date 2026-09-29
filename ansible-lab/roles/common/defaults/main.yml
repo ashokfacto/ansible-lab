@@ -1,0 +1,3 @@
+---
+common_packages: [curl, tree, vim-tiny]
+common_motd: "This server is managed by Ansible. Manual changes will be overwritten."

@@ -1,0 +1,45 @@
+---
+# Exercise 3: a complete play - install, configure, start, and a handler
+# Run:    ansible-playbook playbooks/03_webserver.yml
+# Verify: open http://localhost:8081 and http://localhost:8082 in your Windows browser
+- name: Install and configure nginx
+  hosts: webservers
+  become: true                      # run tasks as root via sudo
+
+  vars:
+    owner_team: "Ansible learners"
+
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: "{{ nginx_packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Deploy the home page from a template
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart nginx         # handler runs ONLY if this task changed something
+
+    - name: Listen on IPv4 only (some Docker setups have no IPv6)
+      ansible.builtin.lineinfile:
+        path: /etc/nginx/sites-available/default
+        regexp: '^\s*listen \[::\]:80'
+        state: absent
+      notify: Restart nginx
+
+    - name: Ensure nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+
+  handlers:
+    - name: Restart nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted

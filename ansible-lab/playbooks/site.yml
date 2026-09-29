@@ -1,0 +1,16 @@
+---
+# Exercise 8: the same work organised as reusable roles
+# Run: ansible-playbook playbooks/site.yml
+- name: Baseline for every server
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Web tier
+  hosts: webservers
+  become: true
+  roles:
+    - role: nginx
+      vars:
+        nginx_page_title: "Deployed by the nginx role"

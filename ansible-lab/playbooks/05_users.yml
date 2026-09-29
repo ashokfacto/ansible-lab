@@ -1,0 +1,21 @@
+---
+# Exercise 5: manage users from data kept in inventory/group_vars/all.yml
+- name: Create training users
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure group 'trainees' exists
+      ansible.builtin.group:
+        name: trainees
+        state: present
+
+    - name: Create users
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        shell: "{{ item.shell }}"
+        groups: trainees
+        append: true
+        state: present
+      loop: "{{ lab_users }}"
+      loop_control:
+        label: "{{ item.name }}"

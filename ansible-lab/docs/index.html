@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ansible for beginners — a hands-on walkthrough</title>
+<meta name="description" content="Learn Ansible from zero: concepts, playbooks, authentication and modules, with a hands-on lab that runs on a Windows laptop.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🅰️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F6F7F5;
+  --panel: #ECEEEB;
+  --ink: #1C2126;
+  --muted: #5E6873;
+  --rule: #D6DADC;
+  --term: #1F2429;
+  --term-ink: #D8DEE4;
+  --term-dim: #8B96A1;
+  --key: #86BCDA;
+  --str: #E6C07B;
+  --ok: #2F8A55;
+  --changed: #B4781A;
+  --failed: #C23B2F;
+  --skipped: #3B7DB8;
+  --ok-soft: #E3F0E7;
+  --changed-soft: #F6ECDA;
+  --failed-soft: #F6E1DE;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+  --side: 17.5rem;
+  --measure: 44rem;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15191D; --panel: #1D2227; --ink: #E4E8EC; --muted: #9AA4AE; --rule: #2E353C;
+    --term: #0E1114; --ok-soft: #173024; --changed-soft: #33280F; --failed-soft: #3A1B18;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15191D; --panel: #1D2227; --ink: #E4E8EC; --muted: #9AA4AE; --rule: #2E353C;
+  --term: #0E1114; --ok-soft: #173024; --changed-soft: #33280F; --failed-soft: #3A1B18;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 1.0625rem/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--ink); }
+:focus-visible { outline: 2px solid var(--skipped); outline-offset: 2px; border-radius: 3px; }
+code, kbd, pre { font-family: var(--mono); }
+:not(pre) > code { font-size: .88em; background: var(--panel); padding: .1em .35em; border-radius: 4px; }
+kbd { font-size: .8em; border: 1px solid var(--rule); border-bottom-width: 2px; padding: 0 .35em; border-radius: 4px; background: var(--paper); }
+
+/* ---------- layout ---------- */
+.shell { display: grid; grid-template-columns: var(--side) minmax(0, 1fr); min-height: 100vh; }
+.side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  border-right: 1px solid var(--rule); padding: calc(env(safe-area-inset-top, 0px) + 1.5rem) 1.25rem 2rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
+}
+main { padding: 0 clamp(1.25rem, 5vw, 4.5rem) 6rem; min-width: 0; }
+.wrap { max-width: 56rem; }
+.prose { max-width: var(--measure); }
+
+/* ---------- sidebar ---------- */
+.brand { font-weight: 600; font-size: 1.05rem; line-height: 1.3; text-decoration: none; }
+.brand small { display: block; font-weight: 400; color: var(--muted); font-size: .85rem; }
+.timer { border: 1px solid var(--rule); border-radius: 8px; padding: .7rem .8rem; }
+.timer-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.clock { font: 600 1.35rem/1 var(--mono); font-variant-numeric: tabular-nums; }
+.clock.over { color: var(--failed); }
+.timer p { margin: .45rem 0 0; font-size: .8rem; color: var(--muted); line-height: 1.35; }
+.btns { display: flex; gap: .35rem; }
+button, .btn {
+  font: 600 .8rem/1 var(--sans); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 6px; padding: .45rem .6rem; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.agenda { list-style: none; margin: 0; padding: 0; font-size: .88rem; }
+.agenda li a {
+  display: grid; grid-template-columns: 2.6rem 1fr auto; gap: .4rem; align-items: baseline;
+  padding: .32rem .45rem; border-radius: 6px; text-decoration: none; color: var(--muted);
+}
+.agenda li a:hover { background: var(--panel); color: var(--ink); }
+.agenda .t { font: .75rem var(--mono); font-variant-numeric: tabular-nums; }
+.agenda .st { font: 600 .68rem var(--mono); color: transparent; }
+.agenda li.done .st { color: var(--ok); }
+.agenda li.done .st::before { content: "ok"; }
+.agenda li.current a { background: var(--panel); color: var(--ink); font-weight: 600; }
+.agenda li.due a { box-shadow: inset 3px 0 0 var(--changed); }
+.agenda li.break a { font-style: italic; }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: .5rem; font-size: .82rem; color: var(--muted); }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+
+.topbar { display: none; }
+
+/* ---------- hero ---------- */
+.hero { padding: 4.5rem 0 3rem; border-bottom: 1px solid var(--rule); }
+.hero h1 { font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1.02; letter-spacing: -.025em; margin: 0 0 1rem; font-weight: 600; }
+.hero .lede { font-size: 1.2rem; color: var(--muted); max-width: 36rem; margin: 0 0 2rem; }
+.run { background: var(--term); color: var(--term-ink); border-radius: 10px; padding: 1.1rem 1.25rem; font: .86rem/1.6 var(--mono); overflow-x: auto; max-width: 46rem; }
+.run .ln { white-space: pre; opacity: 1; }
+.run.animate .ln { opacity: 0; }
+.run.animate .ln.show { opacity: 1; transition: opacity .12s; }
+.dim { color: var(--term-dim); }
+.okc { color: #5FC08A; } .chc { color: #E3AE52; } .flc { color: #EE7B6F; } .prm { color: #7DDBA4; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 1.75rem; font-size: .92rem; color: var(--muted); }
+.hero-meta b { color: var(--ink); font-weight: 600; }
+
+/* ---------- sections ---------- */
+section { padding-top: 3.5rem; }
+.task {
+  font: 600 clamp(1.15rem, 2.4vw, 1.5rem)/1.3 var(--mono); margin: 0 0 .35rem; display: flex; gap: .6rem; overflow: hidden; white-space: nowrap;
+}
+.task .nm { white-space: normal; }
+.task::after { content: "********************************************************************************************"; color: var(--rule); font-weight: 400; overflow: hidden; flex: 1; }
+.sec-meta { font-size: .88rem; color: var(--muted); margin: 0 0 1.5rem; }
+h3 { font-size: 1.2rem; margin: 2.25rem 0 .6rem; line-height: 1.3; font-weight: 600; }
+p { margin: 0 0 1rem; }
+ul, ol { padding-left: 1.3rem; margin: 0 0 1rem; }
+li { margin-bottom: .3rem; }
+.big-def { font-size: 1.3rem; line-height: 1.5; max-width: 40rem; margin: 0 0 1.5rem; }
+.big-def b { font-weight: 600; }
+
+/* code */
+.code { position: relative; margin: 0 0 1.25rem; }
+.code pre {
+  margin: 0; background: var(--term); color: var(--term-ink); border-radius: 8px;
+  padding: 1rem 1.1rem; overflow-x: auto; font-size: .84rem; line-height: 1.6; tab-size: 2;
+}
+.code .cap { font: .78rem var(--mono); color: var(--muted); margin-bottom: .35rem; display: flex; justify-content: space-between; gap: 1rem; }
+.code .cap a { color: var(--muted); }
+.copy { position: absolute; right: .5rem; top: .5rem; background: #2E353C; color: #D8DEE4; border-color: #3D454D; font-size: .72rem; padding: .35rem .5rem; opacity: .85; }
+.code .cap + pre + .copy, .code:has(.cap) .copy { top: 1.95rem; }
+.copy:hover { opacity: 1; border-color: #6B7680; }
+.hk { color: var(--key); } .hs { color: var(--str); } .hc { color: var(--term-dim); font-style: italic; } .hp { color: #7DDBA4; user-select: none; }
+
+/* tables */
+.tbl { overflow-x: auto; margin: 0 0 1.5rem; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; min-width: 36rem; }
+th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; font-size: .85rem; color: var(--muted); }
+td:first-child { font-weight: 600; }
+.cmp th.ans, .cmp td.ans { background: var(--ok-soft); }
+td code { white-space: nowrap; }
+
+/* definition grid */
+.terms { display: grid; grid-template-columns: minmax(9rem, 12rem) 1fr; gap: 0; margin: 0 0 1.5rem; border-top: 1px solid var(--rule); }
+.terms dt, .terms dd { padding: .7rem 0; border-bottom: 1px solid var(--rule); margin: 0; }
+.terms dt { font-weight: 600; padding-right: 1rem; }
+.terms dd { color: var(--ink); }
+
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+.pair > * { min-width: 0; }
+.pair h4 { margin: 0 0 .5rem; font-size: 1rem; }
+.bad h4 { color: var(--failed); } .good h4 { color: var(--ok); }
+
+.callout { border-left: 3px solid var(--changed); background: var(--changed-soft); padding: .8rem 1rem; border-radius: 0 6px 6px 0; margin: 0 0 1.25rem; max-width: var(--measure); }
+.callout.red { border-color: var(--failed); background: var(--failed-soft); }
+.callout.green { border-color: var(--ok); background: var(--ok-soft); }
+.callout p:last-child { margin: 0; }
+
+.try { border: 1px dashed var(--ok); border-radius: 8px; padding: 1rem 1.1rem .25rem; margin: 1.5rem 0; }
+.try > strong { display: block; color: var(--ok); margin-bottom: .4rem; font-family: var(--mono); font-size: .9rem; }
+
+/* status legend */
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .6rem; margin: 0 0 1.5rem; }
+.legend div { padding: .6rem .75rem; border-radius: 6px; background: var(--panel); font-size: .88rem; line-height: 1.4; }
+.legend b { display: block; font-family: var(--mono); }
+
+/* diagrams */
+.diagram { margin: 0 0 1.5rem; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 36rem; height: auto; }
+.diagram svg text { font-family: var(--sans); fill: var(--ink); }
+.diagram .box { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; }
+.diagram .panel { fill: var(--panel); stroke: none; }
+.diagram .engine { fill: var(--ink); }
+.diagram .engine-t { fill: var(--paper); font-weight: 600; }
+.diagram .mut { fill: var(--muted); font-size: 12px; }
+.diagram .ln { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.diagram .ln-ok { stroke: var(--ok); stroke-width: 2; fill: none; }
+.diagram .agent { fill: var(--changed); }
+.diagram .mono { font-family: var(--mono) !important; }
+
+/* steps */
+.steps { list-style: none; padding: 0; counter-reset: s; margin: 0 0 1.5rem; max-width: var(--measure); }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 2.2rem 1fr; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid var(--rule); margin: 0; }
+.steps li::before { content: counter(s); font: 600 .95rem/1.9rem var(--mono); text-align: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--ink); color: var(--paper); }
+.steps b { display: block; }
+
+/* ladder */
+.ladder { list-style: none; padding: 0; margin: 0 0 1.5rem; max-width: 34rem; }
+.ladder li { font: .88rem var(--mono); padding: .45rem .75rem; margin: 0 0 .3rem; border-radius: 5px; display: flex; justify-content: space-between; gap: 1rem; background: color-mix(in srgb, var(--failed) var(--p), var(--panel)); }
+.ladder li span { font-family: var(--sans); color: var(--muted); font-size: .8rem; }
+.ladder li:nth-child(-n+3) { color: #fff; } .ladder li:nth-child(-n+3) span { color: #f3d9d6; }
+
+/* ad-hoc anatomy */
+.anat { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.5rem; }
+.anat div { display: flex; flex-direction: column; gap: .25rem; }
+.anat code { font-size: .95rem !important; padding: .5rem .7rem !important; background: var(--term) !important; color: var(--term-ink); border-radius: 6px !important; }
+.anat span { font-size: .78rem; color: var(--muted); padding-left: .2rem; }
+.anat .a2 code { color: #EE7B6F; } .anat .a4 code { color: var(--key); } .anat .a5 code { color: #7DDBA4; }
+
+/* trainer notes */
+.notes { display: none; margin: 1.25rem 0 0; border: 1px solid var(--rule); border-radius: 8px; padding: .8rem 1rem; font-size: .92rem; max-width: var(--measure); background: var(--panel); }
+.notes::before { content: "Trainer notes"; display: block; font-weight: 600; margin-bottom: .3rem; }
+body.show-notes .notes { display: block; }
+
+/* quiz */
+details.q { border-bottom: 1px solid var(--rule); padding: .6rem 0; max-width: var(--measure); }
+details.q summary { cursor: pointer; font-weight: 600; }
+details.q p { margin: .5rem 0 0; color: var(--muted); }
+
+.brk { margin-top: 3.5rem; padding: 2rem; border: 1px dashed var(--rule); border-radius: 10px; text-align: center; }
+.brk p { margin: .3rem 0 0; color: var(--muted); }
+
+footer { margin-top: 5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: .88rem; color: var(--muted); }
+
+/* ---------- present mode ---------- */
+body.present { font-size: 1.22rem; }
+body.present .shell { grid-template-columns: 0 minmax(0, 1fr); }
+body.present .side { visibility: hidden; }
+body.present .wrap { max-width: 64rem; margin: 0 auto; }
+body.present .prose, body.present .callout, body.present .steps, body.present .notes, body.present details.q { max-width: 52rem; }
+body.present .code pre { font-size: .95rem; }
+body.present section { min-height: 90vh; }
+.present-hint { display: none; position: fixed; right: 1rem; bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); font-size: .8rem; color: var(--muted); background: var(--paper); border: 1px solid var(--rule); padding: .4rem .6rem; border-radius: 6px; z-index: 5; }
+body.present .present-hint { display: block; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 960px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { position: fixed; inset: 0 auto 0 0; width: min(20rem, 86vw); z-index: 20; background: var(--paper); transform: translateX(-100%); transition: transform .2s; box-shadow: none; }
+  body.menu-open .side { transform: none; box-shadow: 0 0 0 100vmax rgba(0,0,0,.35); }
+  .topbar { display: flex; position: sticky; top: 0; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--rule); padding: calc(env(safe-area-inset-top, 0px) + .6rem) 1.25rem .6rem; align-items: center; justify-content: space-between; gap: 1rem; }
+  .topbar b { font-size: .95rem; }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 4rem); }
+  .hero { padding-top: 2.5rem; }
+  .pair { grid-template-columns: 1fr; }
+  .terms { grid-template-columns: 1fr; }
+  .terms dt { border-bottom: 0; padding-bottom: 0; }
+  body.present .shell { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .side { transition: none; } .run.animate .ln { opacity: 1; } }
+@media print {
+  .side, .topbar, .copy, .present-hint { display: none !important; }
+  .shell { display: block; } body { background: #fff; }
+  section { break-inside: avoid-page; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button id="menuBtn" aria-controls="side" aria-expanded="false">Agenda</button>
+  <b>Ansible for beginners</b>
+  <span class="clock" id="clockMobile" aria-hidden="true">0:00</span>
+</div>
+
+<div class="shell">
+<aside class="side" id="side" aria-label="Session agenda">
+  <a class="brand" href="#top">Ansible for beginners<small>Hands-on walkthrough with a Windows lab</small></a>
+
+  <div class="timer" aria-label="Session timer">
+    <div class="timer-row">
+      <span class="clock" id="clock" role="timer">0:00</span>
+      <div class="btns">
+        <button id="startBtn" aria-pressed="false">Start</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <p id="timerHint">Teaching a class? Start the timer when you begin and the agenda shows where you should be.</p>
+  </div>
+
+  <nav>
+    <ol class="agenda" id="agenda">
+      <li data-start="0"><a href="#lab"><span class="t">0:00</span><span>Set up your lab</span><span class="st"></span></a></li>
+      <li data-start="5"><a href="#what"><span class="t">0:05</span><span>What is Ansible?</span><span class="st"></span></a></li>
+      <li data-start="17"><a href="#compare"><span class="t">0:17</span><span>Ansible vs Chef vs Puppet vs SaltStack</span><span class="st"></span></a></li>
+      <li data-start="27"><a href="#why"><span class="t">0:27</span><span>Why Ansible?</span><span class="st"></span></a></li>
+      <li data-start="32"><a href="#architecture"><span class="t">0:32</span><span>Architecture</span><span class="st"></span></a></li>
+      <li data-start="44"><a href="#terms"><span class="t">0:44</span><span>Terminologies</span><span class="st"></span></a></li>
+      <li data-start="54" class="break"><a href="#break"><span class="t">0:54</span><span>Break</span><span class="st"></span></a></li>
+      <li data-start="59"><a href="#playbooks"><span class="t">0:59</span><span>Playbook structure</span><span class="st"></span></a></li>
+      <li data-start="79"><a href="#auth"><span class="t">1:19</span><span>Authentication mechanism</span><span class="st"></span></a></li>
+      <li data-start="89"><a href="#adhoc"><span class="t">1:29</span><span>Executing Ansible modules</span><span class="st"></span></a></li>
+      <li data-start="99"><a href="#modules"><span class="t">1:39</span><span>Modules</span><span class="st"></span></a></li>
+      <li data-start="107"><a href="#best"><span class="t">1:47</span><span>Best practices</span><span class="st"></span></a></li>
+      <li data-start="115"><a href="#recap"><span class="t">1:55</span><span>Recap and quiz</span><span class="st"></span></a></li>
+      <li data-start="999"><a href="#setup"><span class="t">—</span><span>Appendix: Windows setup</span><span class="st"></span></a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <div class="switch"><span>Trainer notes</span><button id="notesBtn" aria-pressed="false">Show</button></div>
+    <div class="switch"><span>Present mode <kbd>P</kbd></span><button id="presentBtn" aria-pressed="false">Off</button></div>
+    <div class="switch"><span>Theme</span><button id="themeBtn">Auto</button></div>
+    <a id="repoLink" href="#setup">Lab files on GitHub</a>
+  </div>
+</aside>
+
+<main id="top">
+<div class="wrap">
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <h1>Ansible for beginners</h1>
+  <p class="lede">No automation experience needed. Learn to manage Linux servers with plain YAML files, and practise on three real servers running on your own Windows laptop. Work through it at your own pace in about two hours, or use it to teach a class.</p>
+  <div class="run" id="run" aria-label="Example playbook run showing today's agenda">
+<div class="ln"><span class="prm">$</span> ansible-playbook learn_ansible.yml</div>
+<div class="ln"> </div>
+<div class="ln">PLAY [Ansible for beginners] <span class="dim">**************************************</span></div>
+<div class="ln"> </div>
+<div class="ln">TASK [What is Ansible?] <span class="dim">******************************************</span></div>
+<div class="ln"><span class="okc">ok: [you]</span></div>
+<div class="ln">TASK [Compare with Chef, Puppet and SaltStack] <span class="dim">*******************</span></div>
+<div class="ln"><span class="okc">ok: [you]</span></div>
+<div class="ln">TASK [Understand the architecture and terms] <span class="dim">*********************</span></div>
+<div class="ln"><span class="okc">ok: [you]</span></div>
+<div class="ln">TASK [Write and run playbooks] <span class="dim">***********************************</span></div>
+<div class="ln"><span class="chc">changed: [you]</span></div>
+<div class="ln">TASK [Log in with SSH keys and protect secrets] <span class="dim">******************</span></div>
+<div class="ln"><span class="okc">ok: [you]</span></div>
+<div class="ln">TASK [Run modules and follow best practices] <span class="dim">*********************</span></div>
+<div class="ln"><span class="okc">ok: [you]</span></div>
+<div class="ln"> </div>
+<div class="ln">PLAY RECAP <span class="dim">*******************************************************</span></div>
+<div class="ln">you    : <span class="okc">ok=6</span>  <span class="chc">changed=1</span>  unreachable=0  <span class="dim">failed=0</span></div>
+  </div>
+  <div class="hero-meta">
+    <span><b>About 2 hours</b> self-paced or in a class</span>
+    <span><b>Free tools only</b> WSL2 and Docker, no cloud account</span>
+    <span><b>8 playbooks</b> to run, change and break safely</span>
+  </div>
+</header>
+
+<!-- ================= LAB ================= -->
+<section id="lab" data-idx="0">
+  <h2 class="task"><span>TASK</span><span class="nm">[Set up your lab]</span></h2>
+  <p class="sec-meta">5 minutes if you did the setup appendix already</p>
+  <div class="prose">
+    <p>You don't need Linux experience or a cloud account. Everything runs on your laptop. Ansible lives inside WSL2, the Linux environment built into Windows, and it manages three small Ubuntu servers running in Docker Desktop.</p>
+  </div>
+  <div class="diagram" role="img" aria-label="Windows laptop containing WSL2 control node which connects over SSH to three Docker containers: web1, web2 and db1">
+    <svg viewBox="0 0 760 270">
+      <rect class="panel" x="0" y="0" width="760" height="270" rx="12"/>
+      <text x="20" y="30" font-weight="600" font-size="14">Windows laptop</text>
+      <rect class="box" x="20" y="50" width="270" height="200" rx="10"/>
+      <text x="40" y="80" font-weight="600" font-size="15">WSL2 · Ubuntu 24.04</text>
+      <text x="40" y="100" class="mut">Control node: Ansible is installed here</text>
+      <text x="40" y="140" font-size="13">Ansible and ansible-lint</text>
+      <text x="40" y="165" font-size="13">Your SSH key</text>
+      <text x="40" y="190" font-size="13" class="mono">~/ansible-lab</text>
+      <path class="ln-ok" d="M290 150 H 400" marker-end="url(#arr)"/>
+      <text x="318" y="140" font-size="12" font-weight="600" fill="var(--ok)" style="fill:var(--ok)">SSH</text>
+      <rect class="box" x="410" y="50" width="330" height="200" rx="10"/>
+      <text x="430" y="80" font-weight="600" font-size="15">Docker Desktop · managed nodes</text>
+      <rect class="panel" x="430" y="98" width="290" height="40" rx="6"/>
+      <text x="445" y="123" class="mono" font-weight="600" font-size="14">web1</text><text x="510" y="123" class="mut">SSH 2221 · web page 8081</text>
+      <rect class="panel" x="430" y="146" width="290" height="40" rx="6"/>
+      <text x="445" y="171" class="mono" font-weight="600" font-size="14">web2</text><text x="510" y="171" class="mut">SSH 2222 · web page 8082</text>
+      <rect class="panel" x="430" y="194" width="290" height="40" rx="6"/>
+      <text x="445" y="219" class="mono" font-weight="600" font-size="14">db1</text><text x="510" y="219" class="mut">SSH 2223</text>
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--ok)" style="fill:var(--ok)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="try">
+    <strong>Check your lab</strong>
+    <div class="code"><pre><code class="sh">$ cd ~/ansible-lab
+$ docker compose up -d
+$ ansible all -m ping -k      # SSH password: ansible</code></pre></div>
+    <p>Three green <code>SUCCESS</code> lines mean you are ready. Haven't set up yet, or not working? Jump to the <a href="#setup">setup appendix</a>, or use the backup container: <code>docker compose exec control bash</code>.</p>
+  </div>
+  <div class="notes">Hands-up check: who gets three green pings? Send anyone stuck to the backup control container so they can follow along. Common causes: Docker Desktop not running, working from <code>/mnt/c</code> so <code>ansible.cfg</code> is ignored, or <code>sshpass</code> missing.</div>
+</section>
+
+<!-- ================= WHAT ================= -->
+<section id="what" data-idx="1">
+  <h2 class="task"><span>TASK</span><span class="nm">[What is Ansible?]</span></h2>
+  <p class="sec-meta">12 minutes</p>
+
+  <h3>One server is easy. A hundred is not.</h3>
+  <div class="pair">
+    <div class="bad">
+      <h4>By hand</h4>
+      <div class="code"><pre><code class="sh">$ ssh server-01
+$ sudo apt install nginx
+$ sudo vi /etc/nginx/nginx.conf
+$ sudo systemctl restart nginx
+# ...and again for server-02 to server-100</code></pre></div>
+      <p>Slow, easy to get wrong, and every server drifts a little. Nobody has a record of what was changed.</p>
+    </div>
+    <div class="good">
+      <h4>With Ansible</h4>
+      <div class="code"><pre><code class="yml">- name: Web servers
+  hosts: webservers    # 1 or 1000 hosts
+  become: true
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx</code></pre></div>
+      <p>Describe the result once and apply it everywhere. The file lives in Git, so changes are reviewed and repeatable.</p>
+    </div>
+  </div>
+
+  <h3>Definition</h3>
+  <p class="big-def"><b>Ansible</b> is an open-source, agentless automation tool. It configures systems, deploys software and orchestrates IT work using readable YAML files, connecting over SSH to Linux and over WinRM or SSH to Windows.</p>
+  <div class="prose">
+    <ul>
+      <li><strong>Agentless:</strong> nothing to install on the servers you manage, only SSH and Python.</li>
+      <li><strong>YAML:</strong> playbooks read like a checklist.</li>
+      <li><strong>History:</strong> created by Michael DeHaan in 2012; Red Hat bought it in 2015.</li>
+      <li><strong>Names you will hear:</strong> <code>ansible-core</code> is the engine with the builtin modules. The <code>ansible</code> package adds curated community collections (that is what we installed). Red Hat Ansible Automation Platform, and its open-source upstream AWX, add a web UI for teams.</li>
+    </ul>
+  </div>
+
+  <h3>Four ideas behind Ansible</h3>
+  <dl class="terms">
+    <dt>Infrastructure as Code</dt><dd>Servers are described in text files kept in Git, so every change is reviewed, versioned and repeatable.</dd>
+    <dt>Configuration management</dt><dd>Keep many machines in a known, consistent state: packages, files, users and services.</dd>
+    <dt>Idempotency</dt><dd>Running the same playbook twice gives the same result. If nothing has drifted, the second run changes nothing.</dd>
+    <dt>Declarative</dt><dd>You say what you want (“nginx is present and running”). The module works out how to get there.</dd>
+  </dl>
+
+  <h3>What people automate with it</h3>
+  <div class="prose">
+    <p>Configuration management, application deployment and rolling updates, provisioning cloud resources on AWS, Azure, GCP or VMware, orchestrating multi-tier changes in order (database, then app, then load balancer), security patching and compliance, and network devices from Cisco, Juniper and Arista.</p>
+  </div>
+  <div class="notes">Ask how long 100 manual installs would take, and what happens if server 57 gets a typo. Stress the three words: open-source, agentless, YAML. Idempotency is the idea we will prove in the lab by running the same playbook twice.</div>
+</section>
+
+<!-- ================= COMPARE ================= -->
+<section id="compare" data-idx="2">
+  <h2 class="task"><span>TASK</span><span class="nm">[Ansible vs Chef vs Puppet vs SaltStack]</span></h2>
+  <p class="sec-meta">10 minutes</p>
+  <div class="tbl">
+    <table class="cmp">
+      <thead><tr><th></th><th class="ans">Ansible</th><th>Chef</th><th>Puppet</th><th>SaltStack</th></tr></thead>
+      <tbody>
+        <tr><td>Architecture</td><td class="ans">Agentless, push</td><td>Agent, pull</td><td>Agent, pull</td><td>Agent or SSH, push and pull</td></tr>
+        <tr><td>Language</td><td class="ans">YAML</td><td>Ruby DSL</td><td>Puppet DSL</td><td>YAML with Jinja</td></tr>
+        <tr><td>Transport</td><td class="ans">SSH / WinRM</td><td>HTTPS to Chef Server</td><td>HTTPS to Puppet Server</td><td>ZeroMQ event bus</td></tr>
+        <tr><td>Setup effort</td><td class="ans">Very low</td><td>High</td><td>High</td><td>Medium</td></tr>
+        <tr><td>Learning curve</td><td class="ans">Easy</td><td>Steep</td><td>Moderate to steep</td><td>Moderate</td></tr>
+        <tr><td>Execution order</td><td class="ans">Top to bottom</td><td>Top to bottom</td><td>Model-based, by dependencies</td><td>Top to bottom</td></tr>
+        <tr><td>Speed at scale</td><td class="ans">Good (parallel forks)</td><td>Good</td><td>Good</td><td>Very fast (event-driven)</td></tr>
+        <tr><td>Owner</td><td class="ans">Red Hat (IBM)</td><td>Progress</td><td>Perforce</td><td>Broadcom (VMware)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Push vs pull</h3>
+  <div class="diagram" role="img" aria-label="Push: the Ansible control node connects out to three servers. Pull: three servers with agents check in to a master server.">
+    <svg viewBox="0 0 760 260">
+      <rect class="panel" x="0" y="0" width="370" height="260" rx="12"/>
+      <text x="20" y="32" font-weight="600" font-size="15">Push: Ansible</text>
+      <rect class="engine" x="30" y="105" width="110" height="50" rx="8"/><text x="85" y="135" text-anchor="middle" class="engine-t" font-size="13">Control node</text>
+      <g><rect class="box" x="250" y="55" width="90" height="36" rx="6"/><text x="295" y="78" text-anchor="middle" font-size="12">server</text></g>
+      <g><rect class="box" x="250" y="112" width="90" height="36" rx="6"/><text x="295" y="135" text-anchor="middle" font-size="12">server</text></g>
+      <g><rect class="box" x="250" y="169" width="90" height="36" rx="6"/><text x="295" y="192" text-anchor="middle" font-size="12">server</text></g>
+      <path class="ln-ok" d="M140 130 L246 73" marker-end="url(#arr)"/><path class="ln-ok" d="M140 130 L246 130" marker-end="url(#arr)"/><path class="ln-ok" d="M140 130 L246 187" marker-end="url(#arr)"/>
+      <text x="20" y="240" class="mut">You decide when changes run. Nothing runs on servers in between.</text>
+
+      <rect class="panel" x="390" y="0" width="370" height="260" rx="12"/>
+      <text x="410" y="32" font-weight="600" font-size="15">Pull: Chef and Puppet</text>
+      <rect class="box" x="420" y="105" width="110" height="50" rx="8"/><text x="475" y="135" text-anchor="middle" font-size="13" font-weight="600">Master server</text>
+      <g><rect class="box" x="620" y="55" width="90" height="36" rx="6"/><text x="665" y="78" text-anchor="middle" font-size="12">server</text><rect class="agent" x="700" y="48" width="44" height="18" rx="4"/><text x="722" y="61" text-anchor="middle" font-size="10" style="fill:#fff" font-weight="600">agent</text></g>
+      <g><rect class="box" x="620" y="112" width="90" height="36" rx="6"/><text x="665" y="135" text-anchor="middle" font-size="12">server</text><rect class="agent" x="700" y="105" width="44" height="18" rx="4"/><text x="722" y="118" text-anchor="middle" font-size="10" style="fill:#fff" font-weight="600">agent</text></g>
+      <g><rect class="box" x="620" y="169" width="90" height="36" rx="6"/><text x="665" y="192" text-anchor="middle" font-size="12">server</text><rect class="agent" x="700" y="162" width="44" height="18" rx="4"/><text x="722" y="175" text-anchor="middle" font-size="10" style="fill:#fff" font-weight="600">agent</text></g>
+      <path class="ln" d="M620 73 L534 128" marker-end="url(#arrg)"/><path class="ln" d="M620 130 L534 130" marker-end="url(#arrg)"/><path class="ln" d="M620 187 L534 132" marker-end="url(#arrg)"/>
+      <text x="410" y="240" class="mut">Agents check in on a schedule and fix drift on their own.</text>
+      <defs><marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--muted)"/></marker></defs>
+    </svg>
+  </div>
+  <div class="prose"><p>No tool is simply “best”. Chef and Puppet are mature and strong at continuous drift correction; Salt is very fast at large scale. Ansible wins on simplicity because there are no agents or central server to run. It can also work in pull style with <code>ansible-pull</code> or scheduled runs in AWX.</p></div>
+  <div class="notes">Read the Architecture row first; that is the big difference. Ownership changes are context only: Chef to Progress (2020), Puppet to Perforce (2022), Salt to VMware (2020) and then Broadcom (2023).</div>
+</section>
+
+<!-- ================= WHY ================= -->
+<section id="why" data-idx="3">
+  <h2 class="task"><span>TASK</span><span class="nm">[Why Ansible?]</span></h2>
+  <p class="sec-meta">5 minutes</p>
+  <dl class="terms">
+    <dt>Simple</dt><dd>YAML reads like a checklist. Most people are productive on day one.</dd>
+    <dt>Agentless</dt><dd>Only SSH and Python on targets. Nothing extra to patch, monitor or secure.</dd>
+    <dt>Idempotent</dt><dd>Safe to re-run; only what is different gets changed.</dd>
+    <dt>Batteries included</dt><dd>Thousands of modules and collections on Ansible Galaxy.</dd>
+    <dt>Works everywhere</dt><dd>Linux, Windows, cloud, containers and network gear.</dd>
+    <dt>Big community</dt><dd>A common DevOps skill in job listings, backed by Red Hat.</dd>
+  </dl>
+  <div class="callout"><p><strong>Honest limits:</strong> SSH-based runs across thousands of hosts are slower than agent or event-bus tools, and there is no built-in continuous drift correction unless you schedule runs.</p></div>
+</section>
+
+<!-- ================= ARCHITECTURE ================= -->
+<section id="architecture" data-idx="4">
+  <h2 class="task"><span>TASK</span><span class="nm">[Architecture]</span></h2>
+  <p class="sec-meta">12 minutes</p>
+  <div class="diagram" role="img" aria-label="Control node containing inventory, playbooks, modules and plugins feeding the Ansible engine, which connects to Linux, Windows and network or cloud managed nodes">
+    <svg viewBox="0 0 760 330">
+      <rect class="panel" x="0" y="0" width="470" height="330" rx="12"/>
+      <text x="20" y="32" font-weight="600" font-size="15">Control node</text>
+      <rect class="box" x="25" y="55" width="150" height="62" rx="8"/><text x="40" y="80" font-weight="600" font-size="14">Inventory</text><text x="40" y="102" class="mut">which hosts</text>
+      <rect class="box" x="295" y="55" width="150" height="62" rx="8"/><text x="310" y="80" font-weight="600" font-size="14">Playbooks</text><text x="310" y="102" class="mut">what to do</text>
+      <rect class="box" x="25" y="240" width="150" height="62" rx="8"/><text x="40" y="265" font-weight="600" font-size="14">Modules</text><text x="40" y="287" class="mut">how to do it</text>
+      <rect class="box" x="295" y="240" width="150" height="62" rx="8"/><text x="310" y="265" font-weight="600" font-size="14">Plugins, ansible.cfg</text><text x="310" y="287" class="mut">connection, output, lookups</text>
+      <rect class="engine" x="165" y="140" width="140" height="70" rx="10"/><text x="235" y="180" text-anchor="middle" class="engine-t" font-size="15">Ansible engine</text>
+      <path class="ln" d="M100 117 L170 142"/><path class="ln" d="M370 117 L300 142"/><path class="ln" d="M100 240 L170 208"/><path class="ln" d="M370 240 L300 208"/>
+      <path class="ln-ok" d="M305 175 H 470"/>
+      <path class="ln-ok" d="M470 175 L 545 80" marker-end="url(#arr)"/><path class="ln-ok" d="M470 175 L 545 175" marker-end="url(#arr)"/><path class="ln-ok" d="M470 175 L 545 270" marker-end="url(#arr)"/>
+      <text x="560" y="32" font-weight="600" font-size="15">Managed nodes</text>
+      <rect class="box" x="550" y="50" width="200" height="60" rx="8"/><text x="565" y="75" font-weight="600" font-size="14">Linux</text><text x="565" y="96" class="mut">SSH, Python</text>
+      <rect class="box" x="550" y="145" width="200" height="60" rx="8"/><text x="565" y="170" font-weight="600" font-size="14">Windows</text><text x="565" y="191" class="mut">WinRM or SSH, PowerShell</text>
+      <rect class="box" x="550" y="240" width="200" height="60" rx="8"/><text x="565" y="265" font-weight="600" font-size="14">Network and cloud</text><text x="565" y="286" class="mut">SSH or API</text>
+    </svg>
+  </div>
+  <div class="prose"><p>The control node reads the <strong>inventory</strong> (which hosts), the <strong>playbook</strong> (what to do), and uses <strong>modules</strong> (small programs that do the work) and <strong>plugins</strong> (connection, output, lookups, filters). Nothing Ansible-specific runs on the managed nodes: no agent, no database, no daemon.</p></div>
+
+  <h3>What happens when a task runs</h3>
+  <ol class="steps">
+    <li><div><b>Read</b>Parse <code>ansible.cfg</code>, the inventory, the playbook and variables.</div></li>
+    <li><div><b>Connect</b>Open SSH to each host, several at a time (<code>forks</code>, default 5; the lab uses 10).</div></li>
+    <li><div><b>Copy</b>Send the module, a small Python program, to a temporary folder on the host.</div></li>
+    <li><div><b>Execute</b>Run it. The module compares the current state with the desired state.</div></li>
+    <li><div><b>Return</b>The module replies with JSON: ok, changed or failed.</div></li>
+    <li><div><b>Clean up</b>Remove the temporary files and move on to the next task.</div></li>
+  </ol>
+  <div class="try">
+    <strong>See it for yourself</strong>
+    <div class="code"><pre><code class="sh">$ ansible-inventory --graph
+$ ansible-config dump --only-changed
+$ ansible web1 -m ping -vvv      # watch connect, copy, execute, return</code></pre></div>
+  </div>
+  <div class="notes">This is why Python is needed on Linux targets: modules are Python programs copied over and run. <code>pipelining = True</code> in the lab config skips the copy step, which speeds things up.</div>
+</section>
+
+<!-- ================= TERMS ================= -->
+<section id="terms" data-idx="5">
+  <h2 class="task"><span>TASK</span><span class="nm">[Terminologies]</span></h2>
+  <p class="sec-meta">10 minutes</p>
+  <h3>The building blocks</h3>
+  <dl class="terms">
+    <dt>Control node</dt><dd>The machine Ansible is installed on and run from. Linux or macOS; on Windows, use WSL.</dd>
+    <dt>Managed node (host)</dt><dd>Any machine Ansible configures. Needs SSH and Python (Linux) or WinRM (Windows).</dd>
+    <dt>Inventory</dt><dd>The list of managed nodes, organised into groups. INI or YAML, static or dynamic.</dd>
+    <dt>Module</dt><dd>A unit of work Ansible sends to a host, such as <code>apt</code>, <code>copy</code>, <code>service</code> or <code>user</code>.</dd>
+    <dt>Task</dt><dd>One call to a module with arguments, plus a descriptive name.</dd>
+    <dt>Play</dt><dd>Maps a group of hosts to a list of tasks.</dd>
+    <dt>Playbook</dt><dd>A YAML file containing one or more plays.</dd>
+  </dl>
+  <h3>The power features</h3>
+  <dl class="terms">
+    <dt>Variables</dt><dd>Values that differ per host, group or environment, such as <code>http_port: 80</code>.</dd>
+    <dt>Facts</dt><dd>Information Ansible discovers about each host (OS, IP, memory) using the <code>setup</code> module.</dd>
+    <dt>Handlers</dt><dd>Tasks that run only when another task notifies them of a change, like restarting nginx.</dd>
+    <dt>Templates</dt><dd>Jinja2 files (<code>.j2</code>) filled in with variables to produce real config files.</dd>
+    <dt>Roles</dt><dd>A standard folder layout that packages tasks, handlers, templates and variables for reuse.</dd>
+    <dt>Collections</dt><dd>The distribution format for modules, roles and plugins, such as <code>ansible.posix</code>.</dd>
+    <dt>Ansible Galaxy</dt><dd>The public hub for sharing roles and collections.</dd>
+    <dt>Vault</dt><dd>Built-in encryption for passwords, keys and other secrets.</dd>
+  </dl>
+
+  <h3>Inventory: telling Ansible which hosts exist</h3>
+  <div class="pair">
+    <div class="code"><div class="cap"><span>INI format</span><a data-repo="inventory/wsl.ini">inventory/wsl.ini</a></div><pre><code class="ini">[webservers]
+web1 ansible_host=127.0.0.1 ansible_port=2221
+web2 ansible_host=127.0.0.1 ansible_port=2222
+
+[dbservers]
+db1  ansible_host=127.0.0.1 ansible_port=2223
+
+[lab:children]     # a group of groups
+webservers
+dbservers</code></pre></div>
+    <div class="code"><div class="cap"><span>YAML format</span><a data-repo="inventory/lab.yml">inventory/lab.yml</a></div><pre><code class="yml">all:
+  children:
+    lab:
+      children:
+        webservers:
+          hosts:
+            web1:
+            web2:
+        dbservers:
+          hosts:
+            db1:</code></pre></div>
+  </div>
+  <div class="prose"><p>Every inventory has two built-in groups, <code>all</code> and <code>ungrouped</code>. You target hosts with patterns such as <code>web1</code>, <code>webservers</code>, <code>webservers:dbservers</code> or <code>all:!db1</code>. Dynamic inventory plugins can read hosts straight from AWS, Azure or VMware.</p></div>
+
+  <h3>Where variables live</h3>
+  <div class="pair">
+    <ul class="ladder" aria-label="Variable precedence, highest first">
+      <li style="--p:100%">-e "x=1" extra vars<span>always wins</span></li>
+      <li style="--p:85%">task and block vars<span></span></li>
+      <li style="--p:70%">play vars, vars_files<span></span></li>
+      <li style="--p:52%">host_vars/db1.yml<span>one host</span></li>
+      <li style="--p:38%">group_vars/webservers.yml<span>one group</span></li>
+      <li style="--p:24%">group_vars/all.yml<span>every host</span></li>
+      <li style="--p:10%">role defaults/main.yml<span>easiest to override</span></li>
+    </ul>
+    <div class="code"><pre><code class="yml"># inventory/group_vars/webservers.yml
+http_port: 80
+page_title: "Hello from Ansible"
+
+# inventory/host_vars/db1.yml
+server_role: database
+
+# use it anywhere with Jinja2
+msg: "Port is {{ http_port }}"</code></pre></div>
+  </div>
+  <div class="prose"><p>The more specific location wins. Official precedence has 22 levels, but this simplified ladder covers day-to-day work.</p></div>
+  <div class="notes">Quick check: “Is apt a task or a module?” (a module). Live: <code>ansible web1 -m setup -a "filter=ansible_distribution*"</code> to show facts.</div>
+</section>
+
+<div class="brk" id="break" data-idx="6">
+  <h2 class="task" style="justify-content:center"><span>PAUSE</span><span class="nm">[Take a short break]</span></h2>
+  <p>Halfway there. Before you continue, run <code>docker ps</code> and <code>ansible all -m ping</code>.</p>
+</div>
+
+<!-- ================= PLAYBOOKS ================= -->
+<section id="playbooks" data-idx="7">
+  <h2 class="task"><span>TASK</span><span class="nm">[Playbook structure]</span></h2>
+  <p class="sec-meta">20 minutes, including hands-on</p>
+
+  <h3>YAML in five minutes</h3>
+  <div class="pair">
+    <div class="code"><pre><code class="yml">---                    # optional document start
+name: Alice            # key: value (a mapping)
+is_admin: true         # booleans: true / false
+packages:              # a list
+  - nginx
+  - curl
+user:                  # a nested mapping
+  name: bob
+  shell: /bin/bash
+inline_list: [a, b, c]
+message: "Quote values that contain {{ vars }} or colons"
+script: |              # keep line breaks
+  line one
+  line two</code></pre></div>
+    <div class="prose">
+      <ul>
+        <li>Spaces only, never tabs.</li>
+        <li>Indent consistently, two spaces is the norm.</li>
+        <li><code>- </code> starts a list item.</li>
+        <li>Put a space after the colon: <code>key: value</code>.</li>
+        <li>Quote any value that starts with <code>{{</code>.</li>
+        <li>Check your work with <code>--syntax-check</code> or <code>ansible-lint</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Playbook, play, task, module</h3>
+  <dl class="terms">
+    <dt>Playbook</dt><dd>A YAML file holding an ordered list of plays.</dd>
+    <dt>Play</dt><dd>Targets a group of hosts and sets options such as <code>become</code>, <code>vars</code> and <code>gather_facts</code>.</dd>
+    <dt>Task</dt><dd>One step. It runs on every host in the play before the next task starts.</dd>
+    <dt>Module</dt><dd>The code that does the work for a task.</dd>
+  </dl>
+
+  <h3>Anatomy of a playbook</h3>
+  <div class="code"><div class="cap"><span>The web server playbook from the lab</span><a data-repo="playbooks/03_webserver.yml">playbooks/03_webserver.yml</a></div><pre><code class="yml">---
+- name: Install and configure nginx    # play name
+  hosts: webservers                    # which inventory group
+  become: true                         # run as root via sudo
+  vars:
+    owner_team: "Ansible learners"
+
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:              # module, written with its full name
+        name: nginx                     # module arguments describe the state
+        state: present
+        update_cache: true
+
+    - name: Deploy the home page from a template
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        mode: "0644"
+      notify: Restart nginx            # triggers the handler below
+
+    - name: Ensure nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+
+  handlers:
+    - name: Restart nginx               # runs once, at the end, only if notified
+      ansible.builtin.service:
+        name: nginx
+        state: restarted</code></pre></div>
+  <div class="try">
+    <strong>Try it: run it, then run it again</strong>
+    <div class="code"><pre><code class="sh">$ ansible-playbook playbooks/03_webserver.yml --check    # dry run
+$ ansible-playbook playbooks/03_webserver.yml            # for real
+$ ansible-playbook playbooks/03_webserver.yml            # again: changed=0</code></pre></div>
+    <p>Open <a href="http://localhost:8081">localhost:8081</a> and <a href="http://localhost:8082">localhost:8082</a> in your browser. Then change <code>page_title</code> in <code>inventory/group_vars/webservers.yml</code> and run with <code>--diff</code>: only the template changes, so the handler fires.</p>
+  </div>
+
+  <h3>Loops, conditionals and register</h3>
+  <div class="code"><div class="cap"><span>Excerpts</span><a data-repo="playbooks/04_vars_loops_conditions.yml">playbooks/04_vars_loops_conditions.yml</a></div><pre><code class="yml">- name: Install packages                    # loop: repeat for each item
+  ansible.builtin.apt:
+    name: "{{ item }}"
+  loop: [curl, tree, vim-tiny]
+
+- name: Only on Debian-family systems       # when: run only if true
+  ansible.builtin.debug:
+    msg: "apt is the right module here"
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Read uptime                         # register: save the result
+  ansible.builtin.command: uptime
+  register: up
+  changed_when: false                       # reading never changes the server
+
+- name: Show it
+  ansible.builtin.debug:
+    var: up.stdout</code></pre></div>
+  <div class="prose"><p><code>when</code> takes a Jinja2 expression without the curly braces. <code>changed_when: false</code> keeps the report honest for commands that only read data.</p></div>
+
+  <h3>Roles: organise playbooks for reuse</h3>
+  <div class="pair">
+    <div class="code"><pre><code class="plain">ansible-lab/
+├── ansible.cfg
+├── inventory/
+│   ├── wsl.ini
+│   ├── group_vars/
+│   └── host_vars/
+├── playbooks/site.yml
+└── roles/
+    └── nginx/
+        ├── tasks/main.yml
+        ├── handlers/main.yml
+        ├── templates/index.html.j2
+        ├── files/
+        ├── vars/main.yml
+        ├── defaults/main.yml
+        └── meta/main.yml</code></pre></div>
+    <div>
+      <dl class="terms">
+        <dt><code>tasks/</code></dt><dd>The entry point, <code>main.yml</code>.</dd>
+        <dt><code>handlers/</code></dt><dd>Restart and reload handlers.</dd>
+        <dt><code>templates/</code></dt><dd>Jinja2 <code>.j2</code> files.</dd>
+        <dt><code>files/</code></dt><dd>Static files for <code>copy</code>.</dd>
+        <dt><code>defaults/</code></dt><dd>Lowest-priority variables.</dd>
+        <dt><code>meta/</code></dt><dd>Author and dependencies.</dd>
+      </dl>
+      <div class="code"><div class="cap"><span>Using roles</span><a data-repo="playbooks/site.yml">playbooks/site.yml</a></div><pre><code class="yml">- hosts: webservers
+  become: true
+  roles:
+    - nginx</code></pre></div>
+    </div>
+  </div>
+  <div class="prose"><p>Create a skeleton with <code>ansible-galaxy role init roles/myrole</code>. Try <code>ansible-playbook playbooks/site.yml --tags motd</code> to run only part of a role.</p></div>
+
+  <h3>Reading the output</h3>
+  <div class="legend">
+    <div style="border-left:4px solid var(--ok)"><b style="color:var(--ok)">ok</b>Already in the desired state; nothing done.</div>
+    <div style="border-left:4px solid var(--changed)"><b style="color:var(--changed)">changed</b>Ansible made a change.</div>
+    <div style="border-left:4px solid var(--failed)"><b style="color:var(--failed)">failed</b>The task hit an error; this host stops.</div>
+    <div style="border-left:4px solid var(--skipped)"><b style="color:var(--skipped)">skipped</b>A <code>when</code> condition was false.</div>
+    <div style="border-left:4px solid #8E5BB5"><b style="color:#8E5BB5">unreachable</b>Could not connect: SSH or login problem.</div>
+  </div>
+  <div class="code"><pre><code class="out">PLAY RECAP *********************************************
+web1 : ok=5  changed=0  unreachable=0  failed=0  skipped=0
+web2 : ok=6  changed=3  unreachable=0  failed=0  skipped=0</code></pre></div>
+  <div class="prose"><p>Useful flags: <code>--syntax-check</code>, <code>--check</code>, <code>--diff</code>, <code>--limit web1</code>, <code>--tags motd</code>, <code>--list-tasks</code> and <code>-v</code> up to <code>-vvvv</code>.</p></div>
+  <div class="notes">Most beginner errors are YAML indentation; recommend the Red Hat YAML and Ansible extensions for VS Code. By default a task runs on all hosts before the next task starts (the linear strategy); a failed host drops out, the rest continue. The lab playbook also has a <code>lineinfile</code> task that removes nginx's IPv6 listener, because some Docker setups have no IPv6.</div>
+</section>
+
+<!-- ================= AUTH ================= -->
+<section id="auth" data-idx="8">
+  <h2 class="task"><span>TASK</span><span class="nm">[Authentication mechanism]</span></h2>
+  <p class="sec-meta">10 minutes, including hands-on</p>
+  <div class="prose"><p>Authentication is really three separate questions.</p></div>
+  <dl class="terms">
+    <dt>1. How do I log in?</dt><dd>SSH password (<code>-k</code>, needs <code>sshpass</code>) or, preferably, an SSH key pair. Windows uses WinRM (NTLM, Kerberos or certificates) or SSH. <code>ansible_user</code> or <code>remote_user</code> sets the login name.</dd>
+    <dt>2. How do I get root?</dt><dd>Privilege escalation with <code>become: true</code> (sudo by default), <code>become_user</code> to switch to another account, and <code>-K</code> to prompt for the sudo password.</dd>
+    <dt>3. How do I protect secrets?</dt><dd>Ansible Vault encrypts files with AES-256. <code>no_log: true</code> hides values in output. Larger teams often use HashiCorp Vault or CyberArk.</dd>
+  </dl>
+
+  <h3>From password to SSH keys</h3>
+  <ol class="steps">
+    <li><div><b>Create a key pair on the control node</b><code>ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""</code></div></li>
+    <li><div><b>First contact with a password</b><code>ansible all -m ping -k</code> and type <code>ansible</code></div></li>
+    <li><div><b>Copy the public key to every node</b><code>ansible-playbook playbooks/06_ssh_keys.yml -k</code></div></li>
+    <li><div><b>Log in without a password from now on</b><code>ansible all -m ping</code></div></li>
+  </ol>
+  <div class="code"><div class="cap"><span>The playbook that copies the key</span><a data-repo="playbooks/06_ssh_keys.yml">playbooks/06_ssh_keys.yml</a></div><pre><code class="yml">- name: Distribute the control node's public key
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Add public key to ~ansible/.ssh/authorized_keys
+      ansible.posix.authorized_key:
+        user: ansible
+        state: present
+        key: "{{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'HOME') + '/.ssh/id_ed25519.pub') }}"</code></pre></div>
+  <div class="callout green"><p>The private key never leaves the control node. Only the public key is copied to the servers.</p></div>
+
+  <h3>Privilege escalation</h3>
+  <div class="code"><pre><code class="yml">- hosts: dbservers
+  become: true                       # the whole play runs as root
+  tasks:
+    - name: Create a database as the postgres user
+      ansible.builtin.command: createdb app
+      become_user: postgres          # just this task</code></pre></div>
+  <div class="prose"><p>Only escalate where you need to. Ad-hoc equivalents are <code>-b</code> to become root and <code>-K</code> to be asked for the sudo password.</p></div>
+
+  <h3>Ansible Vault</h3>
+  <div class="code"><pre><code class="sh">$ cp vault/secrets.example.yml vault/secrets.yml
+$ ansible-vault encrypt vault/secrets.yml       # choose a vault password
+$ cat vault/secrets.yml                          # $ANSIBLE_VAULT;1.1;AES256 ...
+$ ansible-vault view vault/secrets.yml
+$ ansible-vault edit vault/secrets.yml
+$ ansible-playbook playbooks/07_vault.yml --ask-vault-pass</code></pre></div>
+  <div class="callout red"><p><strong>Never commit plain-text passwords.</strong> Commit the encrypted file and share the vault password through a separate channel. The lab's <code>.gitignore</code> already excludes <code>vault/secrets.yml</code>.</p></div>
+  <div class="notes">Do the key switch live. The lab turns off host key checking and known_hosts only because containers are rebuilt often; keep host key checking on in real environments. In production: SSH keys, a dedicated automation user with limited sudo, and secrets in a vault.</div>
+</section>
+
+<!-- ================= ADHOC ================= -->
+<section id="adhoc" data-idx="9">
+  <h2 class="task"><span>TASK</span><span class="nm">[Executing Ansible modules]</span></h2>
+  <p class="sec-meta">10 minutes, hands-on</p>
+  <div class="prose"><p>An ad-hoc command runs a single module from the terminal, with no playbook.</p></div>
+  <div class="anat" aria-label="Ad-hoc command broken into parts">
+    <div class="a1"><code>ansible</code><span>the command</span></div>
+    <div class="a2"><code>webservers</code><span>host pattern</span></div>
+    <div class="a3"><code>-b</code><span>become root</span></div>
+    <div class="a4"><code>-m apt</code><span>module</span></div>
+    <div class="a5"><code>-a "name=tree state=present"</code><span>module arguments</span></div>
+  </div>
+  <div class="pair">
+    <div><h4>Use ad-hoc for</h4><ul><li>Quick checks: ping, uptime, disk space</li><li>One-off fixes, like restarting a service</li><li>Gathering facts from many hosts</li><li>Trying a module before writing a task</li></ul></div>
+    <div><h4>Use a playbook for</h4><ul><li>Anything repeatable or multi-step</li><li>Changes that should be reviewed in Git</li><li>Handlers, templates and roles</li><li>Documenting how a server is built</li></ul></div>
+  </div>
+
+  <div class="try">
+    <strong>Try these now</strong>
+    <div class="code"><pre><code class="sh">$ ansible all -m ansible.builtin.command -a "hostname"
+$ ansible all -m ansible.builtin.shell -a "df -h | grep /"
+$ ansible web1 -m ansible.builtin.setup -a "filter=ansible_distribution*"
+$ ansible webservers -b -m ansible.builtin.apt -a "name=tree state=present update_cache=true"
+$ ansible all -b -m ansible.builtin.copy -a "content='hello' dest=/tmp/hello.txt"
+$ ansible dbservers -b -m ansible.builtin.user -a "name=carol state=present"
+$ ansible webservers -b -m ansible.builtin.service -a "name=nginx state=restarted"
+$ ansible 'webservers:!web2' -m ping       # all web servers except web2</code></pre></div>
+    <p>Run the <code>apt</code> command twice. The first run reports <span style="color:var(--changed);font-weight:600">changed</span>, the second <span style="color:var(--ok);font-weight:600">ok</span>. That is idempotency. More commands are in <a data-repo="CHEATSHEET.md">CHEATSHEET.md</a>.</p>
+  </div>
+
+  <h3>command, shell or raw?</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Module</th><th>What it does</th><th>Good for</th><th>Watch out</th></tr></thead>
+    <tbody>
+      <tr><td><code>command</code></td><td>Runs a program directly, no shell. The default module.</td><td>Simple commands; safe from shell injection</td><td>No pipes, redirects, <code>$VARS</code> or <code>&amp;&amp;</code></td></tr>
+      <tr><td><code>shell</code></td><td>Runs through <code>/bin/sh</code> on the node.</td><td>Pipes, redirects, environment variables</td><td>Easy to write tasks that are not idempotent</td></tr>
+      <tr><td><code>raw</code></td><td>Sends a plain SSH command; needs no Python.</td><td>Installing Python on a new host; network devices</td><td>No state checking at all</td></tr>
+    </tbody>
+  </table></div>
+  <div class="prose"><p>Prefer a dedicated module (<code>apt</code>, <code>copy</code>, <code>service</code>) over all three. If you must run a command, prefer <code>command</code>, and add <code>creates</code>, <code>removes</code> or <code>changed_when</code> so the task reports honestly.</p></div>
+  <div class="notes">Watch for people forgetting <code>-b</code> on package installs (permission errors) and for quoting mistakes in <code>-a</code>. The default module is <code>command</code>, so <code>ansible all -a uptime</code> also works.</div>
+</section>
+
+<!-- ================= MODULES ================= -->
+<section id="modules" data-idx="10">
+  <h2 class="task"><span>TASK</span><span class="nm">[Modules]</span></h2>
+  <p class="sec-meta">8 minutes</p>
+  <dl class="terms">
+    <dt>Packages</dt><dd><code>apt</code>, <code>dnf</code>, <code>yum</code>, <code>package</code>, <code>pip</code></dd>
+    <dt>Files</dt><dd><code>copy</code>, <code>file</code>, <code>template</code>, <code>lineinfile</code>, <code>fetch</code></dd>
+    <dt>Services</dt><dd><code>service</code>, <code>systemd</code>, <code>cron</code></dd>
+    <dt>Users and security</dt><dd><code>user</code>, <code>group</code>, <code>authorized_key</code>, <code>firewalld</code></dd>
+    <dt>Commands</dt><dd><code>command</code>, <code>shell</code>, <code>script</code>, <code>raw</code></dd>
+    <dt>Source and network</dt><dd><code>git</code>, <code>get_url</code>, <code>uri</code>, <code>unarchive</code></dd>
+    <dt>Cloud</dt><dd><code>amazon.aws</code>, <code>azure.azcollection</code>, <code>google.cloud</code> collections</dd>
+    <dt>Windows</dt><dd><code>win_package</code>, <code>win_service</code>, <code>win_copy</code></dd>
+  </dl>
+
+  <h3>The ten you will use most</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Module</th><th>What it does</th><th>Example arguments</th></tr></thead>
+    <tbody>
+      <tr><td><code>ping</code></td><td>Tests the connection and Python</td><td><code>ansible all -m ping</code></td></tr>
+      <tr><td><code>apt</code> / <code>dnf</code></td><td>Installs or removes packages</td><td><code>name=nginx state=present</code></td></tr>
+      <tr><td><code>copy</code></td><td>Copies a file or writes content</td><td><code>src=app.conf dest=/etc/app.conf</code></td></tr>
+      <tr><td><code>template</code></td><td>Renders a Jinja2 template</td><td><code>src=index.html.j2 dest=/var/www/html/index.html</code></td></tr>
+      <tr><td><code>file</code></td><td>Creates folders and links; sets permissions</td><td><code>path=/opt/app state=directory mode=0755</code></td></tr>
+      <tr><td><code>lineinfile</code></td><td>Makes sure one line is in a file</td><td><code>path=/etc/hosts line="10.0.0.5 db1"</code></td></tr>
+      <tr><td><code>service</code></td><td>Starts, stops, restarts and enables services</td><td><code>name=nginx state=started enabled=true</code></td></tr>
+      <tr><td><code>user</code> / <code>group</code></td><td>Manages accounts</td><td><code>name=alice groups=trainees append=true</code></td></tr>
+      <tr><td><code>command</code> / <code>shell</code></td><td>Runs commands, as a last resort</td><td><code>cmd: uptime</code></td></tr>
+      <tr><td><code>debug</code></td><td>Prints messages and variables</td><td><code>var: result.stdout</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Look modules up instead of memorising them</h3>
+  <div class="code"><pre><code class="sh">$ ansible-doc -l | grep -i apt            # list and search modules
+$ ansible-doc ansible.builtin.copy        # full documentation with examples
+$ ansible-doc -s ansible.builtin.user     # short snippet to paste into a task
+$ ansible-galaxy collection list          # installed collections
+$ ansible-galaxy collection install community.general</code></pre></div>
+  <div class="prose">
+    <p>Always write the <strong>fully qualified collection name</strong> (FQCN): <code>ansible.builtin.copy</code> rather than <code>copy</code>. It reads as namespace <code>ansible</code>, collection <code>builtin</code>, module <code>copy</code>. It avoids clashes between collections, and <code>ansible-lint</code> flags short names. Full docs are at <a href="https://docs.ansible.com">docs.ansible.com</a>.</p>
+  </div>
+  <div class="notes">The examples section at the bottom of every <code>ansible-doc</code> page is the most useful part for beginners. For every module, <code>state</code> is the key argument: present or absent, started, stopped or restarted, directory, file or absent.</div>
+</section>
+
+<!-- ================= BEST ================= -->
+<section id="best" data-idx="11">
+  <h2 class="task"><span>TASK</span><span class="nm">[Best practices]</span></h2>
+  <p class="sec-meta">8 minutes</p>
+  <dl class="terms">
+    <dt>Name every task</dt><dd>Clear names make output and failures easy to read.</dd>
+    <dt>Modules over shell</dt><dd>Dedicated modules are idempotent; shell commands rarely are.</dd>
+    <dt>Use FQCN</dt><dd><code>ansible.builtin.copy</code>, never a bare <code>copy</code>.</dd>
+    <dt>Structure with roles</dt><dd>Small roles with one job each, reused across playbooks.</dd>
+    <dt>Separate data from code</dt><dd>Values in <code>group_vars</code> and <code>host_vars</code>; logic in tasks.</dd>
+    <dt>Keep secrets in Vault</dt><dd>Never commit plain-text passwords or keys.</dd>
+    <dt>Check before you change</dt><dd><code>--syntax-check</code>, <code>--check --diff</code> and <code>ansible-lint</code>.</dd>
+    <dt>Least privilege</dt><dd>Use <code>become</code> only on tasks that need root.</dd>
+    <dt>Version everything</dt><dd>Git, code review, and CI that runs <code>ansible-lint</code>.</dd>
+  </dl>
+
+  <h3>Same goal, better task</h3>
+  <div class="pair">
+    <div class="bad"><h4>Avoid</h4><div class="code"><pre><code class="yml">- shell: apt-get install -y nginx
+
+- shell: echo "ServerName x" >> /etc/app.conf
+
+- copy: src=db.conf dest=/etc/
+  # the password is inside db.conf, in Git
+
+- hosts: all
+  become: true      # every task as root</code></pre></div></div>
+    <div class="good"><h4>Prefer</h4><div class="code"><pre><code class="yml">- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Set ServerName once
+  ansible.builtin.lineinfile:
+    path: /etc/app.conf
+    line: "ServerName x"
+# secrets in Vault, become per task</code></pre></div></div>
+  </div>
+  <div class="callout"><p>The <code>echo &gt;&gt;</code> version appends a new line every time it runs. Run it five times and you get five lines. The <code>lineinfile</code> version is idempotent.</p></div>
+  <div class="try">
+    <strong>Lint the lab</strong>
+    <div class="code"><pre><code class="sh">$ ansible-lint playbooks roles</code></pre></div>
+    <p>The lab project passes the strictest <code>production</code> profile, so it is a good reference for your own work.</p>
+  </div>
+</section>
+
+<!-- ================= RECAP ================= -->
+<section id="recap" data-idx="12">
+  <h2 class="task"><span>TASK</span><span class="nm">[Recap and quiz]</span></h2>
+  <p class="sec-meta">5 minutes</p>
+  <dl class="terms">
+    <dt>Ansible</dt><dd>Agentless, YAML-based, push-style automation over SSH or WinRM.</dd>
+    <dt>Versus others</dt><dd>Chef and Puppet use agents and pull; Salt uses an event bus.</dd>
+    <dt>Architecture</dt><dd>Control node with inventory, playbooks and modules, connecting to managed nodes.</dd>
+    <dt>Playbooks</dt><dd>Playbook, plays, tasks, modules; plus handlers, variables and roles.</dd>
+    <dt>Authentication</dt><dd>SSH keys to connect, <code>become</code> for root, Vault for secrets.</dd>
+    <dt>Modules</dt><dd>Ad-hoc for one-offs; dedicated modules over shell; look them up with <code>ansible-doc</code>.</dd>
+  </dl>
+
+  <h3>Quick quiz</h3>
+  <details class="q"><summary>What makes Ansible agentless?</summary><p>It connects over SSH or WinRM, copies small modules, runs them and cleans up. Nothing stays running on the managed node.</p></details>
+  <details class="q"><summary>What does idempotent mean?</summary><p>Running the same task again produces the same end state, and reports no change if nothing drifted.</p></details>
+  <details class="q"><summary>What is the difference between a play and a task?</summary><p>A play maps a group of hosts to a list of tasks. A task is a single call to one module.</p></details>
+  <details class="q"><summary>When does a handler run?</summary><p>Once, at the end of the play, and only if a task that notifies it reported changed.</p></details>
+  <details class="q"><summary>Which module adds one line to a file safely?</summary><p><code>ansible.builtin.lineinfile</code>.</p></details>
+  <details class="q"><summary>Why prefer SSH keys over passwords?</summary><p>No password is sent or stored, logins can be automated safely, and keys can be revoked per machine.</p></details>
+
+  <h3>Keep going after today</h3>
+  <div class="prose">
+    <ul>
+      <li>Finish all seven exercises in <a data-repo="EXERCISES.md">EXERCISES.md</a>, plus the stretch goals.</li>
+      <li>Read the getting-started and playbook guides at <a href="https://docs.ansible.com">docs.ansible.com</a>.</li>
+      <li>Browse roles and collections on <a href="https://galaxy.ansible.com">galaxy.ansible.com</a>.</li>
+      <li>Automate one real chore: set up your own development machine with a playbook.</li>
+    </ul>
+    <p>Stop the lab when you are done with <code>docker compose stop</code>, and start it again any time with <code>docker compose start</code>.</p>
+  </div>
+  <div class="notes">Good follow-up session topics: Jinja2 templates in depth, error handling with block and rescue, dynamic inventory for cloud, AWX and Automation Platform, and Molecule for testing roles.</div>
+</section>
+
+<!-- ================= SETUP ================= -->
+<section id="setup" data-idx="13">
+  <h2 class="task"><span>TASK</span><span class="nm">[Appendix: set up the lab on Windows]</span></h2>
+  <p class="sec-meta">Do this first, about 40 minutes the first time. Full troubleshooting is in the <a data-repo="README.md">README</a>.</p>
+  <div class="prose"><p>You need Windows 10 22H2 or Windows 11, 8&nbsp;GB of RAM (16&nbsp;GB is comfortable), 15&nbsp;GB of free disk, virtualization turned on in the BIOS, admin rights and internet access.</p></div>
+  <ol class="steps">
+    <li><div><b>Check the prerequisites</b>In PowerShell, from the lab folder: <code>powershell -ExecutionPolicy Bypass -File .\scripts\check-prereqs.ps1</code></div></li>
+    <li><div><b>Install WSL2 with Ubuntu</b>PowerShell as Administrator: <code>wsl --install -d Ubuntu-24.04</code>, reboot, then create your Linux user.</div></li>
+    <li><div><b>Install Docker Desktop</b>Keep the WSL 2 backend. In Settings, Resources, WSL integration, turn on Ubuntu-24.04. Test in Ubuntu with <code>docker run --rm hello-world</code>.</div></li>
+    <li><div><b>Install VS Code (recommended)</b>Add the WSL, Ansible and YAML extensions, then run <code>code .</code> from the lab folder.</div></li>
+    <li><div><b>Get the lab into your Linux home folder</b><code>git clone https://github.com/<span class="repo-path">YOUR-USER/ansible-lab</span>.git ~/ansible-lab</code><br>Do not work from <code>/mnt/c/…</code>: Windows folders look world-writable to Linux, so Ansible ignores <code>ansible.cfg</code> there.</div></li>
+    <li><div><b>Install Ansible</b><code>cd ~/ansible-lab &amp;&amp; bash scripts/setup-wsl.sh &amp;&amp; source ~/.bashrc</code></div></li>
+    <li><div><b>Start the servers</b><code>docker compose up -d --build</code>, then <code>docker ps</code> should list web1, web2, db1 and control.</div></li>
+    <li><div><b>Smoke test</b><code>ansible all -m ping -k</code> with the password <code>ansible</code>. Three green lines and you are done.</div></li>
+  </ol>
+  <div class="callout"><p><strong>Can't install WSL?</strong> Run <code>docker compose up -d --build</code> in PowerShell, then <code>docker compose exec control bash</code>. That container already has Ansible and works from <code>/ansible</code>.</p></div>
+
+  <h3>Common problems</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>What you see</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td><code>ansible: command not found</code></td><td>Run <code>source ~/.bashrc</code> or open a new terminal.</td></tr>
+      <tr><td>“world writable directory … ignoring ansible.cfg”</td><td>You are in <code>/mnt/c</code>. Move the lab to <code>~</code>.</td></tr>
+      <tr><td>“you must install the sshpass program”</td><td><code>sudo apt install -y sshpass</code></td></tr>
+      <tr><td><code>UNREACHABLE … Connection refused</code></td><td>The containers are not running: <code>docker compose up -d</code>.</td></tr>
+      <tr><td><code>docker: command not found</code> in WSL</td><td>Turn on WSL integration for Ubuntu in Docker Desktop settings.</td></tr>
+      <tr><td><code>Permission denied (publickey,password)</code></td><td>Use <code>-k</code> with password <code>ansible</code>, or rerun <code>06_ssh_keys.yml -k</code> after a lab reset.</td></tr>
+      <tr><td>Downloads fail on the office network</td><td>Set the proxy in Docker Desktop, and <code>export https_proxy=http://proxy:port</code> in WSL.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>
+  <p>Ansible is a trademark of Red Hat, Inc. This walkthrough is independent training material. Lab login details are for local practice only; never reuse them on real servers.</p>
+</footer>
+
+</div>
+</main>
+</div>
+<div class="present-hint" aria-hidden="true"><kbd>←</kbd> <kbd>→</kbd> sections · <kbd>P</kbd> exit</div>
+
+<script>
+(function () {
+  "use strict";
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  /* ---------- repo links: works automatically on <user>.github.io/<repo>/ ---------- */
+  var repoBase = null;
+  var host = location.hostname;
+  if (/\.github\.io$/.test(host)) {
+    var user = host.replace(/\.github\.io$/, "");
+    var repo = location.pathname.split("/").filter(Boolean)[0] || (user + ".github.io");
+    repoBase = "https://github.com/" + user + "/" + repo;
+  }
+  document.querySelectorAll("[data-repo]").forEach(function (a) {
+    var p = a.getAttribute("data-repo");
+    if (repoBase) { a.href = repoBase + "/blob/main/" + p; }
+    else { a.href = "../" + p; }
+  });
+  if (repoBase) {
+    document.getElementById("repoLink").href = repoBase;
+    document.querySelectorAll(".repo-path").forEach(function (s) { s.textContent = repoBase.replace("https://github.com/", ""); });
+  }
+
+  /* ---------- syntax highlighting ---------- */
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function splitComment(line) {
+    var inS = false, inD = false, depth = 0;
+    for (var i = 0; i < line.length; i++) {
+      var c = line[i];
+      if (c === "'" && !inD) inS = !inS;
+      else if (c === '"' && !inS) inD = !inD;
+      else if (c === "{") depth++;
+      else if (c === "}") depth--;
+      else if (c === "#" && !inS && !inD && depth <= 0 && (i === 0 || /\s/.test(line[i - 1]))) return [line.slice(0, i), line.slice(i)];
+    }
+    return [line, ""];
+  }
+  function hlStrings(s) { return esc(s).replace(/("[^"]*"|'[^']*')/g, '<span class="hs">$1</span>'); }
+  function hlLine(line, kind) {
+    var parts = splitComment(line), body = parts[0], cm = parts[1], out = "";
+    if (kind === "yml") {
+      var m = body.match(/^(\s*-?\s*)([A-Za-z_][\w.]*:)(.*)$/);
+      out = m ? esc(m[1]) + '<span class="hk">' + esc(m[2]) + "</span>" + hlStrings(m[3]) : hlStrings(body);
+    } else if (kind === "sh") {
+      var p = body.match(/^(\s*)\$ (.*)$/);
+      out = p ? esc(p[1]) + '<span class="hp">$ </span>' + hlStrings(p[2]) : hlStrings(body);
+    } else if (kind === "ini") {
+      out = /^\s*\[.*\]\s*$/.test(body) ? '<span class="hk">' + esc(body) + "</span>" : esc(body);
+    } else { out = esc(body); }
+    return out + (cm ? '<span class="hc">' + esc(cm) + "</span>" : "");
+  }
+  document.querySelectorAll("pre code").forEach(function (el) {
+    var kind = el.className;
+    if (kind === "out") {
+      el.innerHTML = esc(el.textContent)
+        .replace(/(ok=\d+)/g, '<span class="okc">$1</span>')
+        .replace(/(changed=[1-9]\d*)/g, '<span class="chc">$1</span>')
+        .replace(/(\*{5,})/g, '<span class="hc">$1</span>');
+      return;
+    }
+    if (!/^(yml|sh|ini)$/.test(kind)) return;
+    el.innerHTML = el.textContent.split("\n").map(function (l) { return hlLine(l, kind); }).join("\n");
+  });
+
+  /* ---------- copy buttons ---------- */
+  document.querySelectorAll(".code").forEach(function (box) {
+    var pre = box.querySelector("pre");
+    var btn = document.createElement("button");
+    btn.className = "copy"; btn.type = "button"; btn.textContent = "Copy";
+    btn.setAttribute("aria-label", "Copy code");
+    btn.addEventListener("click", function () {
+      var text = pre.innerText.split("\n").map(function (l) { return l.replace(/^\s*\$ /, ""); }).join("\n");
+      var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = "Copy"; }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { btn.textContent = "Select and copy"; });
+      else btn.textContent = "Select and copy";
+    });
+    box.appendChild(btn);
+  });
+
+  /* ---------- hero run: one orchestrated reveal ---------- */
+  var run = document.getElementById("run");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) {
+    run.classList.add("animate");
+    var lines = run.querySelectorAll(".ln"), i = 0;
+    (function next() {
+      if (i >= lines.length) return;
+      lines[i].classList.add("show");
+      var t = lines[i].textContent.indexOf("TASK") === 0 ? 260 : 110;
+      i++; setTimeout(next, t);
+    })();
+  }
+
+  /* ---------- agenda: visited = ok, current = highlighted ---------- */
+  var items = Array.prototype.slice.call(document.querySelectorAll("#agenda li"));
+  var targets = items.map(function (li) { return document.querySelector(li.querySelector("a").getAttribute("href")); });
+  var visited = {};
+  try { visited = JSON.parse(store.get("ans-visited") || "{}") || {}; } catch (e) { visited = {}; }
+  function paintVisited() { items.forEach(function (li, k) { li.classList.toggle("done", !!visited[k]); }); }
+  paintVisited();
+  function onScroll() {
+    var y = window.innerHeight * 0.35, cur = -1;
+    targets.forEach(function (t, k) { if (t && t.getBoundingClientRect().top < y) cur = k; });
+    items.forEach(function (li, k) { li.classList.toggle("current", k === cur); });
+    for (var k = 0; k < cur; k++) visited[k] = true;
+    if (cur >= 0 && (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 4) visited[items.length - 1] = true;
+    paintVisited(); store.set("ans-visited", JSON.stringify(visited));
+  }
+  window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  /* ---------- trainer timer ---------- */
+  var clock = document.getElementById("clock"), clockM = document.getElementById("clockMobile");
+  var startBtn = document.getElementById("startBtn"), hint = document.getElementById("timerHint");
+  var elapsed = parseInt(store.get("ans-elapsed") || "0", 10) || 0, startedAt = null, tick = null;
+  function fmt(s) { var m = Math.floor(s / 60), r = s % 60; return Math.floor(m / 60) ? Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0") + ":" + String(r).padStart(2, "0") : m + ":" + String(r).padStart(2, "0"); }
+  function now() { return elapsed + (startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0); }
+  function paint() {
+    var s = now(), mins = s / 60;
+    clock.textContent = fmt(s); clockM.textContent = fmt(s);
+    clock.classList.toggle("over", mins > 120);
+    var due = -1;
+    items.forEach(function (li, k) { if (parseFloat(li.dataset.start) <= mins) due = k; });
+    items.forEach(function (li, k) { li.classList.toggle("due", s > 0 && k === due); });
+    if (s > 0 && due >= 0) hint.textContent = mins > 120 ? "Over time. Wrap up with Q&A." : "You should be on: " + items[due].querySelector("span:nth-child(2)").textContent;
+  }
+  function start() { startedAt = Date.now(); tick = setInterval(paint, 1000); startBtn.textContent = "Pause"; startBtn.setAttribute("aria-pressed", "true"); }
+  function pause() { elapsed = now(); startedAt = null; clearInterval(tick); store.set("ans-elapsed", String(elapsed)); startBtn.textContent = "Start"; startBtn.setAttribute("aria-pressed", "false"); paint(); }
+  startBtn.addEventListener("click", function () { startedAt ? pause() : start(); });
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (startedAt) pause(); elapsed = 0; store.set("ans-elapsed", "0");
+    visited = {}; store.set("ans-visited", "{}"); paintVisited();
+    hint.textContent = "Teaching a class? Start the timer when you begin and the agenda shows where you should be."; paint();
+  });
+  window.addEventListener("beforeunload", function () { store.set("ans-elapsed", String(now())); });
+  paint();
+
+  /* ---------- toggles ---------- */
+  function toggle(btn, cls, on, labels) {
+    document.body.classList.toggle(cls, on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.textContent = on ? labels[0] : labels[1];
+  }
+  var notesBtn = document.getElementById("notesBtn");
+  var notesOn = store.get("ans-notes") === "1" || /[?&]notes/.test(location.search);
+  toggle(notesBtn, "show-notes", notesOn, ["Hide", "Show"]);
+  notesBtn.addEventListener("click", function () { notesOn = !notesOn; store.set("ans-notes", notesOn ? "1" : "0"); toggle(notesBtn, "show-notes", notesOn, ["Hide", "Show"]); });
+
+  var presentBtn = document.getElementById("presentBtn"), presentOn = false;
+  function setPresent(on) { presentOn = on; toggle(presentBtn, "present", on, ["On", "Off"]); }
+  presentBtn.addEventListener("click", function () { setPresent(!presentOn); });
+
+  var themeBtn = document.getElementById("themeBtn"), themes = ["auto", "light", "dark"];
+  var theme = store.get("ans-theme") || "auto";
+  function applyTheme() {
+    if (theme === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+    themeBtn.textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+  }
+  applyTheme();
+  themeBtn.addEventListener("click", function () { theme = themes[(themes.indexOf(theme) + 1) % 3]; store.set("ans-theme", theme); applyTheme(); });
+
+  /* ---------- mobile menu ---------- */
+  var menuBtn = document.getElementById("menuBtn");
+  function setMenu(on) { document.body.classList.toggle("menu-open", on); menuBtn.setAttribute("aria-expanded", on ? "true" : "false"); }
+  menuBtn.addEventListener("click", function () { setMenu(!document.body.classList.contains("menu-open")); });
+  document.querySelectorAll("#agenda a, .brand").forEach(function (a) { a.addEventListener("click", function () { setMenu(false); }); });
+  document.addEventListener("click", function (e) {
+    if (document.body.classList.contains("menu-open") && !e.target.closest(".side") && e.target !== menuBtn) setMenu(false);
+  });
+
+  /* ---------- keyboard: P toggles present mode, arrows move between sections ---------- */
+  document.addEventListener("keydown", function (e) {
+    if (e.target.closest && e.target.closest("input, textarea, [contenteditable]")) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "p" || e.key === "P") { setPresent(!presentOn); return; }
+    if (e.key === "Escape") { if (presentOn) setPresent(false); setMenu(false); return; }
+    if (!presentOn) return;
+    if (["ArrowRight", "ArrowLeft", "PageDown", "PageUp"].indexOf(e.key) < 0) return;
+    e.preventDefault();
+    var fwd = e.key === "ArrowRight" || e.key === "PageDown";
+    var secs = [document.getElementById("top")].concat(targets.filter(Boolean));
+    var y = 8, idx = 0;
+    secs.forEach(function (s, k) { if (s.getBoundingClientRect().top <= y + 2) idx = k; });
+    var to = secs[Math.max(0, Math.min(secs.length - 1, idx + (fwd ? 1 : -1)))];
+    to.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  });
+})();
+</script>
+</body>
+</html>
